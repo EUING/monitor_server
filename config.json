@@ -1,0 +1,8 @@
+{
+    "config": {
+        "DB_URL": "mysql+mysqlconnector://root:root@localhost:3306/monitor?charset=utf8"
+    },
+    "test_config": {
+        "DB_URL": "mysql+mysqlconnector://root:root@localhost:3306/test_monitor?charset=utf8"
+    }
+}
