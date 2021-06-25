@@ -13,7 +13,7 @@ class FileService:
                 file_info["creation_time"] = change_time(file_info["creation_time"])
                 file_info["last_modified_time"] = change_time(file_info["last_modified_time"])
 
-        return file_info_list
+        return file_info_list if file_info_list else list()
 
     def get_file_info(self, file_name):
         file_info = self.file_dao.get_file_info(file_name)

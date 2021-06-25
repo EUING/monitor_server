@@ -1,6 +1,11 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 
 def create_endpoint(app, file_service):
+    @app.route("/")
+    def index():
+        file_info_list = file_service.get_total_file_info()
+        return render_template("index.html", data_list = file_info_list)
+
     @app.route("/files", methods=["GET"])
     def get_total_file_info():
         file_info_list = file_service.get_total_file_info()

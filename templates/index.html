@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+	<body>
+		<table border=1>
+			<tr>
+				<th>파일명</th>
+				<td>사이즈</td>
+			        <td>만든 날짜</td>
+				<td>수정한 날짜</td>
+			</tr>
+			{% for file_info in data_list %}
+			<tr>
+				<th> {{file_info.name}}</th>
+				<td> {{file_info.size}}B</td>
+				<td> {{file_info.creation_time}}</td>
+				<td> {{file_info.last_modified_time}}</td>
+			</tr>
+			{% endfor %}
+		</table>
+	</body>
+</html>
