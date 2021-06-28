@@ -2,8 +2,8 @@ import json
 from flask import Flask
 from sqlalchemy import create_engine
 
-from file_dao import FileDao
-from file_service import FileService
+from item_dao import ItemDao
+from item_service import ItemService
 from endpoint import create_endpoint
 
 def create_app(test_mode = False):
@@ -19,8 +19,8 @@ def create_app(test_mode = False):
 
     database = create_engine(app.config["DB_URL"], encoding = "utf-8", max_overflow = 0)
 
-    file_service = FileService(FileDao(database))
+    item_service = ItemService(ItemDao(database))
 
-    create_endpoint(app, file_service)
+    create_endpoint(app, item_service)
 
     return app
