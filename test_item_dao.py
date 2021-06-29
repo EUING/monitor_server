@@ -82,7 +82,8 @@ def test_insert_file_info(item_dao):
             "last_modified_time": "2021-06-24 17:54:30"
             }
 
-    item_dao.insert_file_info(file_info)
+    count = item_dao.insert_file_info(file_info)
+    assert count == 1
 
     file_info = {
                 "parent_id": 0,
@@ -102,7 +103,9 @@ def test_modify_file_info(item_dao):
             "last_modified_time": "2021-06-24 18:10:15"
             }
 
-    item_dao.modify_file_info(file_info)
+    count = item_dao.modify_file_info(file_info)
+    assert count == 1
+
     file_info["creation_time"] = datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S")
     file_info["last_modified_time"] = datetime.datetime.strptime("2021-06-24 18:10:15", "%Y-%m-%d %H:%M:%S")
 
@@ -110,10 +113,18 @@ def test_modify_file_info(item_dao):
 
     assert file_info == modify_file_info
 
+def test_modify_file_same_info(item_dao):
+    same_info = { "parent_id": 2, "name": "test.jpg", "size": 5000, 
+            "creation_time": "2021-06-24 17:54:30", "last_modified_time": "2021-06-24 17:54:30"}
+
+    count = item_dao.modify_file_info(same_info)
+    assert count == 1
+
 def test_change_file_name(item_dao):
     change_name_info = {"old_name": "test.jpg", "new_name": "test.bmp", "parent_id": 2}
 
-    item_dao.change_item_name(change_name_info)
+    count = item_dao.change_item_name(change_name_info)
+    assert count == 1
 
     file_info = {
                 "parent_id": 2,
@@ -130,8 +141,15 @@ def test_change_file_name(item_dao):
 
     assert file_info == change_file_info
 
+def test_change_wrong_file_name(item_dao):
+    change_name_info = {"old_name": "test1.jpg", "new_name": "test.bmp", "parent_id": 2}
+
+    count = item_dao.change_item_name(change_name_info)
+    assert count == 0
+
 def test_delete_file_info(item_dao):
-    item_dao.delete_item_info("새 텍스트 파일.txt", 2)
+    count = item_dao.delete_item_info("새 텍스트 파일.txt", 2)
+    assert count == 1
 
     file_info = item_dao.get_file_info("새 텍스트 파일.txt", 2)
 
@@ -139,6 +157,10 @@ def test_delete_file_info(item_dao):
 
     file_info = item_dao.get_file_info("새 텍스트 파일.txt", 0)
     assert file_info != None
+
+def test_delete_wrong_file_info(item_dao):
+    count = item_dao.delete_item_info("새 텍스트 파일.txt", 1)
+    assert count == 0
 
 def test_get_folder_info(item_dao):
     folder_info = item_dao.get_folder_info("새 폴더", 0)
@@ -168,7 +190,8 @@ def test_insert_folder_info(item_dao):
     folder_info = {"parent_id": 0, "name": "testtest", 
             "creation_time": "2021-06-28 16:30:00"}
 
-    item_dao.insert_folder_info(folder_info)
+    count = item_dao.insert_folder_info(folder_info)
+    assert count == 1
     
     result_info = item_dao.get_folder_info("testtest", 0)
     folder_info["creation_time"] = datetime.datetime.strptime("2021-06-28 16:30:00", "%Y-%m-%d %H:%M:%S")

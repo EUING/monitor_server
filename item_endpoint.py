@@ -14,30 +14,45 @@ def create_endpoint(app, item_service):
     @app.route("/item/name/<path:item_name>", methods=["PATCH"])
     def rename_item_info(item_name):
         change_name_info = request.json
-        item_service.change_item_name(change_name_info)
+        count = item_service.change_item_name(change_name_info)
+        if count == 0:
+            return jsonify(change_name_info), 404
+
         return "", 200
+
+    @app.route("/item/info/<path:item_name>", methods=["DELETE"])
+    def delete_file_info(item_name):
+        count = item_service.delete_item_info(item_name)
+        if count == 0:
+            return jsonify(file_name), 404
+
+        return "", 204
 
     @app.route("/file/info/<path:file_name>", methods=["GET"]) 
     def get_file_info(file_name):
         file_info = item_service.get_file_info(file_name)
+        if file_info is None:
+            return jsonify(file_name), 404
+
         return jsonify(file_info), 200
 
     @app.route("/file/info", methods=["POST"])
     def insert_file_info():
         file_info = request.json
-        item_service.insert_file_info(file_info)
+        count = item_service.insert_file_info(file_info)
+        if count == 0:
+            return jsonify(file_info), 404
+
         return "", 201
 
     @app.route("/file/info/<path:file_name>", methods=["PATCH"])
     def modify_file_info(file_name):
         file_info = request.json
-        item_service.modify_file_info(file_info)
-        return "", 200
+        count = item_service.modify_file_info(file_info)
+        if count == 0:
+            return jsonify(file_name), 404
 
-    @app.route("/file/info/<path:file_name>", methods=["DELETE"])
-    def delete_file_info(file_name):
-        item_service.delete_file_info(file_name)
-        return "", 202
+        return "", 200
 
     @app.route("/folder/contain", methods=["GET"])
     def get_root_contain_list():
@@ -52,15 +67,16 @@ def create_endpoint(app, item_service):
     @app.route("/folder/info/<path:folder_name>", methods=["GET"]) 
     def get_folder_info(folder_name):
         folder_info = item_service.get_folder_info(folder_name)
+        if folder_info is None:
+            return jsonify(folder_name), 404
+
         return jsonify(folder_info), 200
 
     @app.route("/folder/info", methods=["POST"])
     def insert_folder_info():
         folder_info = request.json
-        item_service.insert_folder_info(folder_info)
-        return "", 201
+        count = item_service.insert_folder_info(folder_info)
+        if count == 0:
+            return jsonify(folder_info), 404
 
-    @app.route("/folder/info/<path:folder_name>", methods=["DELETE"])
-    def delete_folder_info(folder_name):
-        item_service.delete_folder_info(folder_name)
-        return "", 202
+        return "", 201

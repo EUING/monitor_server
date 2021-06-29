@@ -81,14 +81,16 @@ def test_get_parent_id(item_service):
 
 def test_change_item_name(item_service):
     change_item_info = {"old_name": "새 폴더", "new_name": "테스트 폴더"}
-    item_service.change_item_name(change_item_info)
+    count = item_service.change_item_name(change_item_info)
+    assert count == 1
 
     folder_info = item_service.get_folder_info("테스트 폴더")
     assert folder_info == {"parent_id": 0, "name": "테스트 폴더", "creation_time": "2021-06-28 16:30:00"}
 
 def test_delete_file_info(item_service):
     file_name = "새 폴더/새 텍스트 파일.txt"
-    item_service.delete_file_info(file_name)
+    count = item_service.delete_item_info(file_name)
+    assert count == 1
 
     file_info = item_service.get_file_info("새 폴더/새 텍스트 파일.txt")
     assert file_info == None
@@ -127,7 +129,8 @@ def test_insert_file_info(item_service):
             "creation_time": "2021-06-24 17:54:30",
             "last_modified_time": "2021-06-24 17:54:30"}
 
-    item_service.insert_file_info(file_info)
+    count = item_service.insert_file_info(file_info)
+    assert count == 1
 
     result_info = item_service.get_file_info("테스트 파일")
     file_info["parent_id"] = 0
@@ -140,7 +143,9 @@ def test_modify_file_info(item_service):
             "last_modified_time": "2021-06-28 19:00:00"
             }
 
-    item_service.modify_file_info(file_info)
+    count = item_service.modify_file_info(file_info)
+    assert count == 1
+
     file_info["name"] = "새 텍스트 파일.txt"
     file_info["parent_id"] = 2
     file_info["creation_time"] = "2021-06-24 17:54:30"
@@ -187,7 +192,8 @@ def test_get_folder_contain_list(item_service):
 
 def test_insert_folder_info(item_service):
     folder_info = {"name": "새 폴더/new folder", "creation_time": "2021-06-28 19:25:00"}
-    item_service.insert_folder_info(folder_info)
+    count = item_service.insert_folder_info(folder_info)
+    assert count == 1
 
     result_info = item_service.get_folder_info("새 폴더/new folder")
     folder_info["name"] = "new folder"
@@ -195,8 +201,14 @@ def test_insert_folder_info(item_service):
 
     assert folder_info == result_info
 
+def test_insert_wrong_folder_info(item_service):
+    wrong_folder_info = {"name": "없는 폴더/new folder", "creation_time": "2021-06-29 10:30:00"}
+    count = item_service.insert_folder_info(wrong_folder_info)
+    assert count == 0
+
 def test_delete_folder_info(item_service):
-    item_service.delete_folder_info("새 폴더/새 폴더")
+    count = item_service.delete_item_info("새 폴더/새 폴더")
+    assert count == 1 
     
     folder_contain_list = item_service.get_folder_contain_list()
 
@@ -214,3 +226,14 @@ def test_delete_folder_info(item_service):
                 "creation_time": "2021-06-28 16:30:00",
                 "last_modified_time": None
             }]
+
+    count = item_service.delete_item_info("새 폴더")
+    assert count == 3
+
+def test_delete_wrong_folder_info(item_service):
+    count = item_service.delete_item_info("새 폴더/없는 폴더")
+    assert count == 0
+
+def test_delete_item_info(item_service):
+    count = item_service.delete_item_info("새 텍스트 파일.txt")
+    assert count == 1

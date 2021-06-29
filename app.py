@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 
 from item_dao import ItemDao
 from item_service import ItemService
-from endpoint import create_endpoint
+from item_endpoint import create_endpoint
 
 def create_app(test_mode = False):
     app = Flask(__name__)

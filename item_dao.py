@@ -19,13 +19,13 @@ class ItemDao:
             UPDATE items
             SET name = :new_name
             WHERE name = :old_name and parent_id = :parent_id
-        """), change_name_info) 
+        """), change_name_info).rowcount 
 
     def delete_item_info(self, item_name, parent_id):
         return self.db.execute(text("""
             DELETE FROM items
             WHERE name = :name and parent_id = :parent_id
-        """), {"name": item_name, "parent_id": parent_id})
+        """), {"name": item_name, "parent_id": parent_id}).rowcount
 
     def get_file_info(self, file_name, parent_id):
         row = self.db.execute(text("""
@@ -56,14 +56,14 @@ class ItemDao:
             :size,
             :creation_time,
             :last_modified_time
-        )"""), file_info)
+        )"""), file_info).rowcount
 
     def modify_file_info(self, file_info):
         return self.db.execute(text("""
             UPDATE items
             SET size = :size, last_modified_time = :last_modified_time
             WHERE name = :name and parent_id = :parent_id
-        """), file_info)
+        """), file_info).rowcount
 
     def get_folder_info(self, folder_name, parent_id):
         row = self.db.execute(text("""
@@ -102,4 +102,4 @@ class ItemDao:
                 :parent_id,
                 :name,
                 :creation_time
-        )"""), folder_info)
+        )"""), folder_info).rowcount

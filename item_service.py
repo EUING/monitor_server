@@ -1,3 +1,4 @@
+import pathlib
 import os
 import queue
 import copy
@@ -10,13 +11,13 @@ class ItemService:
         self.item_dao = item_dao
 
     def get_parent_id(self, relative_path):
-        relative_path = os.path.join("root", relative_path)
+        relative_path = os.path.join(os.pardir, relative_path)
         dir_path, file_name = os.path.split(relative_path)
         sep_list = dir_path.split(os.path.sep)
         
         parent_id = -1
         for folder_name in sep_list:
-            if "root" == folder_name:
+            if os.pardir == folder_name:
                 parent_id = 0
                 continue
 
@@ -25,23 +26,26 @@ class ItemService:
         return parent_id
 
     def change_item_name(self, change_name_info):
-        parent_id = self.get_parent_id(change_name_info["old_name"])
+        old_posix_path = pathlib.PureWindowsPath(change_name_info["old_name"]).as_posix()
+        new_posix_path = pathlib.PureWindowsPath(change_name_info["new_name"]).as_posix()
+        parent_id = self.get_parent_id(old_posix_path)
+        if parent_id is None:
+            return 0
 
         param = copy.deepcopy(change_name_info)
         param["parent_id"] = parent_id
-        param["old_name"] = os.path.basename(param["old_name"])
-        param["new_name"] = os.path.basename(param["new_name"])
+        param["old_name"] = os.path.basename(old_posix_path)
+        param["new_name"] = os.path.basename(new_posix_path)
 
         return self.item_dao.change_item_name(param)
 
-    def delete_file_info(self, file_name):
-        parent_id = self.get_parent_id(file_name)
-        file_name = os.path.basename(file_name)
-        return self.item_dao.delete_item_info(file_name, parent_id)
-
     def get_file_info(self, file_name):
-        parent_id = self.get_parent_id(file_name)
-        file_name = os.path.basename(file_name)
+        posix_path = pathlib.PureWindowsPath(file_name).as_posix()
+        parent_id = self.get_parent_id(posix_path)
+        if parent_id is None:
+            return 0
+
+        file_name = os.path.basename(posix_path)
         file_info = self.item_dao.get_file_info(file_name, parent_id)
 
         if file_info:
@@ -51,26 +55,36 @@ class ItemService:
         return file_info
 
     def insert_file_info(self, file_info):
-        parent_id = self.get_parent_id(file_info["name"])
-
+        posix_path = pathlib.PureWindowsPath(file_info["name"]).as_posix()
+        parent_id = self.get_parent_id(posix_path)
+        if parent_id is None:
+            return 0
+        
         param = copy.deepcopy(file_info)
         param["parent_id"] = parent_id
-        param["name"] = os.path.basename(param["name"])
+        param["name"] = os.path.basename(posix_path)
 
         return self.item_dao.insert_file_info(param)
 
     def modify_file_info(self, file_info):
-        parent_id = self.get_parent_id(file_info["name"])
-
+        posix_path = pathlib.PureWindowsPath(file_info["name"]).as_posix()
+        parent_id = self.get_parent_id(posix_path)
+        if parent_id is None:
+            return 0
+        
         param = copy.deepcopy(file_info)
         param["parent_id"] = parent_id
-        param["name"] = os.path.basename(param["name"])
+        param["name"] = os.path.basename(posix_path)
 
         return self.item_dao.modify_file_info(param)
 
     def get_folder_info(self, folder_name):
-        parent_id = self.get_parent_id(folder_name)
-        folder_name = os.path.basename(folder_name)
+        posix_path = pathlib.PureWindowsPath(folder_name).as_posix()
+        parent_id = self.get_parent_id(posix_path)
+        if parent_id is None:
+            return 0
+
+        folder_name = os.path.basename(posix_path)
         folder_info = self.item_dao.get_folder_info(folder_name, parent_id)
 
         if folder_info:
@@ -82,8 +96,9 @@ class ItemService:
         if folder_name is None:
             item_id = 0
         else:
-            parent_id = self.get_parent_id(folder_name)
-            folder_name = os.path.basename(folder_name)
+            posix_path = pathlib.PureWindowsPath(folder_name).as_posix()
+            parent_id = self.get_parent_id(posix_path)
+            folder_name = os.path.basename(posix_path)
             item_id = self.item_dao.get_item_id(folder_name, parent_id)
 
         folder_contain_list = self.item_dao.get_folder_contain_list(item_id)
@@ -96,18 +111,22 @@ class ItemService:
         return folder_contain_list
 
     def insert_folder_info(self, folder_info):
-        parent_id = self.get_parent_id(folder_info["name"])
+        posix_path = pathlib.PureWindowsPath(folder_info["name"]).as_posix()
+        parent_id = self.get_parent_id(posix_path)
+        if parent_id is None:
+            return 0
 
         param = copy.deepcopy(folder_info)
         param["parent_id"] = parent_id
-        param["name"] = os.path.basename(param["name"])
+        param["name"] = os.path.basename(posix_path)
 
         return self.item_dao.insert_folder_info(param)
 
-    def delete_folder_info(self, folder_path):
+    def delete_item_info(self, item_path):
         delete_list = list()
-        parent_id = self.get_parent_id(folder_path)
-        folder_name = os.path.basename(folder_path)
+        posix_path = pathlib.PureWindowsPath(item_path).as_posix()
+        parent_id = self.get_parent_id(posix_path)
+        folder_name = os.path.basename(posix_path)
         
         folder_list = queue.Queue()
         folder_list.put({"name": folder_name, "parent_id": parent_id})
@@ -124,5 +143,8 @@ class ItemService:
                 if contain_info["last_modified_time"] is None:
                     folder_list.put({"name": contain_info["name"], "parent_id": contain_info["parent_id"]})
 
+        count = 0
         for delete in delete_list:
-            self.item_dao.delete_item_info(delete["item_name"], delete["parent_id"])
+            count += self.item_dao.delete_item_info(delete["item_name"], delete["parent_id"])
+
+        return count

@@ -126,13 +126,12 @@ def test_modify_file_info(api):
     assert file_info == modify_file_info
 
 def test_delete_file_info(api):
-    resp = api.delete("/file/info/새 텍스트 파일.txt")
-    assert resp.status_code == 202
+    resp = api.delete("/item/info/새 텍스트 파일.txt")
+    assert resp.status_code == 204
     
     resp = api.get("/file/info/새 텍스트 파일.txt")
     file_info_list = json.loads(resp.data.decode("utf-8"))
-    assert resp.status_code == 200
-    assert json.loads(resp.data.decode("utf-8")) == None
+    assert resp.status_code == 404
 
 def test_root_contain_list(api):
     resp = api.get("/folder/contain")
@@ -205,8 +204,8 @@ def test_insert_folder_info(api):
     assert result == folder_info 
 
 def test_delete_folder_info(api):
-    resp = api.delete("/folder/info/새 폴더")
-    assert resp.status_code == 202
+    resp = api.delete("/item/info/새 폴더")
+    assert resp.status_code == 204
 
     resp = api.get("folder/contain")
     assert resp.status_code == 200
@@ -218,4 +217,4 @@ def test_delete_folder_info(api):
                 "size": 10,
                 "creation_time": "2021-06-24 17:54:30",
                 "last_modified_time": "2021-06-24 17:54:30"
-            }]
+                }]
