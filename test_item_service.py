@@ -165,7 +165,7 @@ def test_get_folder_info(item_service):
 
 def test_get_folder_contain_list(item_service):
     folder_contain_list = item_service.get_folder_contain_list("새 폴더2")
-    assert folder_contain_list == []
+    assert folder_contain_list == None
 
     folder_contain_list = item_service.get_folder_contain_list("새 폴더")
     assert folder_contain_list == [{
