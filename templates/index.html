@@ -11,13 +11,12 @@
 			<tr>
 				{% if item_info.size < 0 %}
 					<th> <a href="{{current_url}}/{{item_info.name}}">{{item_info.name}}</a></th>
-					<td> "" </td>
-					<td> "" </td>
+					<td></td>
 				{% else %}
 					<th>{{item_info.name}}</th>
 					<td>{{item_info.size}}</td>
-					<td>{{item_info.hash}}</td>
 				{% endif %}
+				<td>{{item_info.hash}}</td>
 			</tr>
 			{% endfor %}
 		</table>
