@@ -5,15 +5,19 @@
 			<tr>
 				<th>파일명</th>
 				<td>사이즈</td>
-			        <td>만든 날짜</td>
-				<td>수정한 날짜</td>
+			    <td>해시</td>
 			</tr>
-			{% for file_info in data_list %}
+			{% for item_info in data_list %}
 			<tr>
-				<th> <a href="{{current_url}}/{{file_info.name}}">{{file_info.name}}</a></th>
-				<td> {{file_info.size}}B</td>
-				<td> {{file_info.creation_time}}</td>
-				<td> {{file_info.last_modified_time}}</td>
+				{% if item_info.size < 0 %}
+					<th> <a href="{{current_url}}/{{item_info.name}}">{{item_info.name}}</a></th>
+					<td> "" </td>
+					<td> "" </td>
+				{% else %}
+					<th>{{item_info.name}}</th>
+					<td>{{item_info.size}}</td>
+					<td>{{item_info.hash}}</td>
+				{% endif %}
 			</tr>
 			{% endfor %}
 		</table>

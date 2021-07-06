@@ -2,9 +2,6 @@ import os
 import queue
 import copy
 
-def change_time(time):
-    return time.strftime("%Y-%m-%d %H:%M:%S")
-
 class ItemService:
     def __init__(self, item_dao):
         self.item_dao = item_dao
@@ -20,14 +17,16 @@ class ItemService:
                 parent_id = 0
                 continue
 
-            parent_id = self.item_dao.get_item_id(folder_name, parent_id)
+            ret, parent_id = self.item_dao.get_item_id(folder_name, parent_id)
+            if ret is False:
+                return False, -1
 
-        return parent_id
+        return True, parent_id
 
     def change_item_name(self, change_name_info):
-        parent_id = self.get_parent_id(change_name_info["old_name"])
-        if parent_id is None:
-            return 0
+        ret, parent_id = self.get_parent_id(change_name_info["old_name"])
+        if ret is False:
+            return False, -1
 
         param = copy.deepcopy(change_name_info)
         param["parent_id"] = parent_id
@@ -36,110 +35,96 @@ class ItemService:
 
         return self.item_dao.change_item_name(param)
 
-    def get_file_info(self, file_name):
-        parent_id = self.get_parent_id(file_name)
-        if parent_id is None:
-            return 0
+    def get_item_info(self, item_name):
+        ret, parent_id = self.get_parent_id(item_name)
+        if ret is False:
+            return False, None
 
-        file_name = os.path.basename(file_name)
-        file_info = self.item_dao.get_file_info(file_name, parent_id)
+        item_name = os.path.basename(item_name)
+        return self.item_dao.get_item_info(item_name, parent_id)
 
-        if file_info:
-            file_info["creation_time"] = change_time(file_info["creation_time"])
-            file_info["last_modified_time"] = change_time(file_info["last_modified_time"])
-
-        return file_info
-
-    def insert_file_info(self, file_info):
-        parent_id = self.get_parent_id(file_info["name"])
-        if parent_id is None:
-            return 0
+    def insert_item_info(self, item_info):
+        ret, parent_id = self.get_parent_id(item_info["name"])
+        if ret is False:
+            return False, -1
         
-        param = copy.deepcopy(file_info)
+        param = copy.deepcopy(item_info)
         param["parent_id"] = parent_id
         param["name"] = os.path.basename(param["name"])
 
-        return self.item_dao.insert_file_info(param)
+        return self.item_dao.insert_item_info(param)
 
-    def modify_file_info(self, file_info):
-        parent_id = self.get_parent_id(file_info["name"])
-        if parent_id is None:
-            return 0
+    def modify_item_info(self, item_info):
+        ret, parent_id = self.get_parent_id(item_info["name"])
+        if ret is False:
+            return False, -1
         
-        param = copy.deepcopy(file_info)
+        param = copy.deepcopy(item_info)
         param["parent_id"] = parent_id
         param["name"] = os.path.basename(param["name"])
 
-        return self.item_dao.modify_file_info(param)
-
-    def get_folder_info(self, folder_name):
-        parent_id = self.get_parent_id(folder_name)
-        if parent_id is None:
-            return 0
-
-        folder_name = os.path.basename(folder_name)
-        folder_info = self.item_dao.get_folder_info(folder_name, parent_id)
-
-        if folder_info:
-            folder_info["creation_time"] = change_time(folder_info["creation_time"])
-
-        return folder_info
+        return self.item_dao.modify_item_info(param)
 
     def get_folder_contain_list(self, folder_name=None):
         if folder_name is None:
             item_id = 0
         else:
-            parent_id = self.get_parent_id(folder_name)
+            ret, parent_id = self.get_parent_id(folder_name)
+            if ret is False:
+                return False, None
+
             if parent_id is None:
-                return None
+                return True, None
 
             folder_name = os.path.basename(folder_name)
-            item_id = self.item_dao.get_item_id(folder_name, parent_id)
-            if item_id is None:
-                return None
+            ret, item_info = self.item_dao.get_item_info(folder_name, parent_id)
+            if ret is False:
+                return False, None
 
-        folder_contain_list = self.item_dao.get_folder_contain_list(item_id)
+            if item_info is None:
+                return True, None
 
-        for contain_info in folder_contain_list:
-            contain_info["creation_time"] = change_time(contain_info["creation_time"])
-            if contain_info["last_modified_time"] is not None:
-                contain_info["last_modified_time"] = change_time(contain_info["last_modified_time"])
+            if item_info["size"] >= 0:
+                return True, None
 
-        return folder_contain_list
+            ret, item_id = self.item_dao.get_item_id(folder_name, parent_id)
+            if ret is False:
+                return False, None
 
-    def insert_folder_info(self, folder_info):
-        parent_id = self.get_parent_id(folder_info["name"])
-        if parent_id is None:
-            return 0
-
-        param = copy.deepcopy(folder_info)
-        param["parent_id"] = parent_id
-        param["name"] = os.path.basename(param["name"])
-
-        return self.item_dao.insert_folder_info(param)
+        return self.item_dao.get_folder_contain_list(item_id)        
 
     def delete_item_info(self, item_path):
         delete_list = list()
-        parent_id = self.get_parent_id(item_path)
-        folder_name = os.path.basename(item_path)
-        
+        ret, parent_id = self.get_parent_id(item_path)
+        if ret is False:
+            return False, -1
+
+        item_name = os.path.basename(item_path)
         folder_list = queue.Queue()
-        folder_list.put({"name": folder_name, "parent_id": parent_id})
-        delete_list.append({"item_name": folder_name, "parent_id": parent_id})
+        folder_list.put({"name": item_name, "parent_id": parent_id})
+        delete_list.append({"item_name": item_name, "parent_id": parent_id})
 
         while folder_list.qsize() > 0:
             folder_info = folder_list.get()
-            item_id = self.item_dao.get_item_id(folder_info["name"], folder_info["parent_id"])
+            ret, item_id = self.item_dao.get_item_id(folder_info["name"], folder_info["parent_id"])
+            if ret is False:
+                return False, -1
 
-            folder_contain_list = self.item_dao.get_folder_contain_list(item_id)
+            ret, folder_contain_list = self.item_dao.get_folder_contain_list(item_id)
+            if ret is False:
+                return False, -1
 
             for contain_info in folder_contain_list:
                 delete_list.append({"item_name": contain_info["name"], "parent_id": contain_info["parent_id"]})
-                if contain_info["last_modified_time"] is None:
+                if contain_info["size"] < 0:
                     folder_list.put({"name": contain_info["name"], "parent_id": contain_info["parent_id"]})
 
         count = 0
         for delete in delete_list:
-            count += self.item_dao.delete_item_info(delete["item_name"], delete["parent_id"])
+            ret, delete_count = self.item_dao.delete_item_info(delete["item_name"], delete["parent_id"])
+            if ret is False:
+                return False, -1
 
-        return count
+            count += delete_count
+
+        return True, count

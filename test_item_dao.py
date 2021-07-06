@@ -1,5 +1,4 @@
 import json
-import datetime
 import pytest
 from item_dao import ItemDao
 
@@ -15,34 +14,30 @@ def item_dao():
     return ItemDao(database)
 
 def setup_function():
-    new_files = [
+    new_items = [
             {
                 "parent_id": 0,
                 "name": "새 텍스트 파일.txt",
                 "size": 10,
-                "creation_time": "2021-06-24 17:54:30",
-                "last_modified_time": "2021-06-24 17:54:30"
+                "hash": "hash"
             },
             {
                 "parent_id": 0,
                 "name": "새 폴더",
-                "size": None,
-                "creation_time": "2021-06-28 16:30:00",
-                "last_modified_time": None
+                "size": -1,
+                "hash": ""
             },
             {
                 "parent_id": 2,
                 "name": "test.jpg",
                 "size": 5000,
-                "creation_time": "2021-06-24 17:54:30",
-                "last_modified_time": "2021-06-24 17:54:30"
+                "hash": "hash"
             },
             {
                 "parent_id": 2,
                 "name": "새 텍스트 파일.txt",
                 "size": 10,
-                "creation_time": "2021-06-24 17:54:30",
-                "last_modified_time": "2021-06-24 17:54:30"
+                "hash": "hash"
             }]
 
     database.execute(text("""
@@ -50,150 +45,108 @@ def setup_function():
             parent_id,
             name,
             size,
-            creation_time,
-            last_modified_time
+            hash
         ) VALUES (
             :parent_id,
             :name,
             :size,
-            :creation_time,
-            :last_modified_time
-    )"""), new_files)
+            :hash
+    )"""), new_items)
 
 def teardown_function():
     database.execute(text("TRUNCATE items"))
     database.execute(text("ALTER TABLE items AUTO_INCREMENT=1"))
 
-def test_get_file_info(item_dao):
-    file_info = item_dao.get_file_info("새 텍스트 파일.txt", 0)
-    assert file_info == {
-                "parent_id": 0,
-                "name": "새 텍스트 파일.txt",
-                "size": 10,
-                "creation_time": datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S"),
-                "last_modified_time": datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S")
-                }
+def test_get_item_id(item_dao):
+    ret, item_id = item_dao.get_item_id("새 폴더2", 0)
+    assert True == ret
+    assert item_id == None
 
-def test_insert_file_info(item_dao):
-    file_info = {
-            "parent_id": 0,
-            "name": "system.dll", "size": 123456, 
-            "creation_time": "2021-06-24 17:54:30",
-            "last_modified_time": "2021-06-24 17:54:30"
-            }
+def test_get_item_info(item_dao):
+    ret, item_info = item_dao.get_item_info("새 텍스트 파일.txt", 3)
+    assert True == ret
+    assert None == item_info
 
-    count = item_dao.insert_file_info(file_info)
-    assert count == 1
+    ret, item_info = item_dao.get_item_info("새 텍스트 파일.txt", 0)
+    assert True == ret
+    assert {"parent_id": 0, "name": "새 텍스트 파일.txt", "size": 10, "hash": "hash"} ==  item_info
 
-    file_info = {
-                "parent_id": 0,
-                "name": "system.dll",
-                "size": 123456,
-                "creation_time": datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S"),
-                "last_modified_time": datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S")}
+def test_insert_item_info(item_dao):
+    wrong_item_info = {"name": "system.dll", "size": 123456, "hash": "hash"}
+    ret, count = item_dao.insert_item_info(wrong_item_info)
+    assert False == ret
+    assert -1 == count
 
-    new_file_info = item_dao.get_file_info("system.dll", 0)
+    item_info = {"parent_id": 0, "name": "system.dll", "size": 123456, "hash": "hash"}
+    ret, count = item_dao.insert_item_info(item_info)
+    assert True == ret
+    assert 1 == count
 
-    assert file_info == new_file_info
+    ret, new_item_info = item_dao.get_item_info("system.dll", 0)
+    assert True == ret
+    assert item_info == new_item_info
 
-def test_modify_file_info(item_dao):
-    file_info = {
-            "parent_id": 0,
-            "name": "새 텍스트 파일.txt", "size": 100, 
-            "last_modified_time": "2021-06-24 18:10:15"
-            }
+def test_modify_item_info(item_dao):
+    item_info = {"parent_id": 0, "name": "새 텍스트 파일.txt", "size": 100, "hash": "hash2"}
+    ret, count = item_dao.modify_item_info(item_info)
+    assert True == ret
+    assert 1 == count
 
-    count = item_dao.modify_file_info(file_info)
-    assert count == 1
+    ret, modify_item_info = item_dao.get_item_info("새 텍스트 파일.txt", 0)
+    assert True == ret
+    assert item_info == modify_item_info
 
-    file_info["creation_time"] = datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S")
-    file_info["last_modified_time"] = datetime.datetime.strptime("2021-06-24 18:10:15", "%Y-%m-%d %H:%M:%S")
+def test_modify_item_same_info(item_dao):
+    same_info = {"parent_id": 2, "name": "test.jpg", "size": 5000, "hash": "hash"}
 
-    modify_file_info = item_dao.get_file_info("새 텍스트 파일.txt", 0)
+    ret, count = item_dao.modify_item_info(same_info)
+    assert True == ret
+    assert 1 == count
 
-    assert file_info == modify_file_info
+def test_change_item_name(item_dao):
+    wrong_info = {"old_name": "test1.jpg", "parent_id": 2}
+    ret, count = item_dao.change_item_name(wrong_info)
+    assert False == ret
+    assert -1 == count
 
-def test_modify_file_same_info(item_dao):
-    same_info = { "parent_id": 2, "name": "test.jpg", "size": 5000, 
-            "creation_time": "2021-06-24 17:54:30", "last_modified_time": "2021-06-24 17:54:30"}
+    wrong_name = {"old_name": "test1.jpg", "new_name": "test.bmp", "parent_id": 2}
+    ret, count = item_dao.change_item_name(wrong_name)
+    assert True == ret
+    assert 0 == count
 
-    count = item_dao.modify_file_info(same_info)
-    assert count == 1
-
-def test_change_file_name(item_dao):
     change_name_info = {"old_name": "test.jpg", "new_name": "test.bmp", "parent_id": 2}
+    ret, count = item_dao.change_item_name(change_name_info)
+    assert True == ret
+    assert 1 == count
 
-    count = item_dao.change_item_name(change_name_info)
-    assert count == 1
+    item_info = {"parent_id": 2, "name": "test.bmp", "size": 5000, "hash": "hash"}
+    ret, change_item_info = item_dao.get_item_info("test.bmp", 2)
+    assert True == ret
+    assert item_info == change_item_info   
 
-    file_info = {
-                "parent_id": 2,
-                "name": "test.bmp",
-                "size": 5000,
-                "creation_time": "2021-06-24 17:54:30",
-                "last_modified_time": "2021-06-24 17:54:30"
-                }
+def test_delete_item_info(item_dao):
+    ret, count = item_dao.delete_item_info("새 텍스트 파일.txt", 1)
+    assert True == ret
+    assert 0 == count
 
-    change_file_info = item_dao.get_file_info("test.bmp", 2)
+    ret, count = item_dao.delete_item_info("새 텍스트 파일.txt", 2)
+    assert True == ret
+    assert 1 == count
 
-    file_info["creation_time"] = datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S")
-    file_info["last_modified_time"] = datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S")
+    ret, item_info = item_dao.get_item_info("새 텍스트 파일.txt", 2)
+    assert True == ret
+    assert None == item_info
 
-    assert file_info == change_file_info
-
-def test_change_wrong_file_name(item_dao):
-    change_name_info = {"old_name": "test1.jpg", "new_name": "test.bmp", "parent_id": 2}
-
-    count = item_dao.change_item_name(change_name_info)
-    assert count == 0
-
-def test_delete_file_info(item_dao):
-    count = item_dao.delete_item_info("새 텍스트 파일.txt", 2)
-    assert count == 1
-
-    file_info = item_dao.get_file_info("새 텍스트 파일.txt", 2)
-
-    assert file_info == None
-
-    file_info = item_dao.get_file_info("새 텍스트 파일.txt", 0)
-    assert file_info != None
-
-def test_delete_wrong_file_info(item_dao):
-    count = item_dao.delete_item_info("새 텍스트 파일.txt", 1)
-    assert count == 0
-
-def test_get_folder_info(item_dao):
-    folder_info = item_dao.get_folder_info("새 폴더", 0)
-
-    assert folder_info == {"parent_id": 0, "name": "새 폴더", 
-            "creation_time": datetime.datetime.strptime("2021-06-28 16:30:00", "%Y-%m-%d %H:%M:%S")}
+    ret, item_info = item_dao.get_item_info("새 텍스트 파일.txt", 0)
+    assert True == ret
+    assert None != item_info
 
 def test_get_folder_contain_list(item_dao):
-    folder_contain_list = item_dao.get_folder_contain_list(2)
+    ret, folder_contain_list = item_dao.get_folder_contain_list(1)
+    assert True == ret
+    assert [] == folder_contain_list 
 
-    assert folder_contain_list == [{
-                "parent_id": 2,
-                "name": "test.jpg",
-                "size": 5000,
-                "creation_time": datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S"),
-                "last_modified_time": datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S")
-            },
-            {
-                "parent_id": 2,
-                "name": "새 텍스트 파일.txt",
-                "size": 10,
-                "creation_time": datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S"),
-                "last_modified_time": datetime.datetime.strptime("2021-06-24 17:54:30", "%Y-%m-%d %H:%M:%S")
-            }]
-
-def test_insert_folder_info(item_dao):
-    folder_info = {"parent_id": 0, "name": "testtest", 
-            "creation_time": "2021-06-28 16:30:00"}
-
-    count = item_dao.insert_folder_info(folder_info)
-    assert count == 1
-    
-    result_info = item_dao.get_folder_info("testtest", 0)
-    folder_info["creation_time"] = datetime.datetime.strptime("2021-06-28 16:30:00", "%Y-%m-%d %H:%M:%S")
-
-    assert result_info == folder_info
+    ret, folder_contain_list = item_dao.get_folder_contain_list(2)
+    assert True == ret
+    assert [{"parent_id": 2, "name": "test.jpg", "size": 5000, "hash": "hash"}, 
+    {"parent_id": 2,"name": "새 텍스트 파일.txt","size": 10,"hash": "hash"}] == folder_contain_list

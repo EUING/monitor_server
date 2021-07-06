@@ -3,104 +3,96 @@ from flask import Flask, jsonify, request, render_template
 def create_endpoint(app, item_service):
     @app.route("/")
     def root_index():
-        root_contain_list = item_service.get_folder_contain_list()
-        current_url = request.base_url[:-1]
-        return render_template("index.html", data_list = root_contain_list, current_url = current_url)
+        ret, root_contain_list = item_service.get_folder_contain_list()
+        if ret is False:
+            return "", 500
+        
+        return render_template("index.html", data_list = root_contain_list, current_url = request.base_url[:-1])
 
     @app.route("/<path:folder_name>")
     def folder_index(folder_name):
-        folder_contain_list = item_service.get_folder_contain_list(folder_name)
-        if folder_contain_list is None:
-            return "{} is missing.".format(folder_name), 404
-        current_url = request.base_url
-        return render_template("index.html", data_list = folder_contain_list, current_url = current_url)
+        ret, folder_contain_list = item_service.get_folder_contain_list(folder_name)
+        if ret is False:
+            return "", 500
 
-    @app.route("/item/name/<path:item_name>", methods=["PATCH"])
+        if folder_contain_list is None:
+            return "{} is missing or not folder.".format(folder_name), 404
+
+        return render_template("index.html", data_list = folder_contain_list, current_url = request.base_url)
+
+    @app.route("/item/info/<path:item_name>", methods=["PATCH"])
     def rename_item_info(item_name):
         change_name_info = request.json
         change_name_info["old_name"] = item_name
 
-        count = item_service.change_item_name(change_name_info)
-        if count == 0:
+        ret, count = item_service.change_item_name(change_name_info)
+        if ret is False:
+            return "", 500
+
+        if 0 == count:
             return "{} is missing.".format(item_name), 404
 
         return "", 200
 
     @app.route("/item/info/<path:item_name>", methods=["DELETE"])
-    def delete_file_info(item_name):
-        count = item_service.delete_item_info(item_name)
-        if count == 0:
+    def delete_item_info(item_name):
+        ret, count = item_service.delete_item_info(item_name)
+        if ret is False:
+            return "", 500
+
+        if 0 == count:
             return "{} is missing.".format(item_name), 200
 
         return "", 204
 
-    @app.route("/file/info/<path:file_name>", methods=["GET"]) 
-    def get_file_info(file_name):
-        file_info = item_service.get_file_info(file_name)
-        if file_info is None:
-            return "{} is missing.".format(file_name), 404
+    @app.route("/item/info/<path:item_name>", methods=["GET"])
+    def get_item_info(item_name):
+        ret, item_info = item_service.get_item_info(item_name)
+        if ret is False:
+            return "", 500
 
-        return jsonify(file_info), 200
+        if item_info is None:
+            return "{} is missing.".format(item_name), 404
 
-    @app.route("/file/info/<path:file_name>", methods=["PUT"])
-    def insert_file_info(file_name):
-        find_file = item_service.get_file_info(file_name)
-        if find_file is not None:
-            return "{} already exists.".format(file_name), 200
+        return jsonify(item_info), 200
 
-        file_info = request.json
-        file_info["name"] = file_name
+    @app.route("/item/info/<path:item_name>", methods=["PUT"])
+    def insert_item_info(item_name):
+        ret, find_item = item_service.get_item_info(item_name)
+        if ret is False:
+            return "", 500
 
-        count = item_service.insert_file_info(file_info)
-        if count == 0:
-            return "", 400
+        item_info = request.json
+        item_info["name"] = item_name
 
-        return "", 201
+        if find_item is not None:
+            ret, count = item_service.modify_item_info(item_info)
+            if ret is False:
+                return "", 500
 
-    @app.route("/file/info/<path:file_name>", methods=["PATCH"])
-    def modify_file_info(file_name):
-        file_info = request.json
-        file_info["name"] = file_name
+            return "", 200
+        else:
+            ret, count = item_service.insert_item_info(item_info)
+            if ret is False:
+                return "", 500
 
-        count = item_service.modify_file_info(file_info)
-        if count == 0:
-            return "{} is missing.".format(file_name), 404
+            return "", 201
 
-        return "", 200
-
-    @app.route("/folder/contain", methods=["GET"])
+    @app.route("/item/contain", methods=["GET"])
     def get_root_contain_list():
-        root_contain_list = item_service.get_folder_contain_list()
+        ret, root_contain_list = item_service.get_folder_contain_list()
+        if ret is False:
+            return "", 500
+
         return jsonify(root_contain_list), 200
 
-    @app.route("/folder/contain/<path:folder_name>", methods=["GET"])
+    @app.route("/item/contain/<path:folder_name>", methods=["GET"])
     def get_folder_contain_list(folder_name):
-        folder_contain_list = item_service.get_folder_contain_list(folder_name)
-        
+        ret, folder_contain_list = item_service.get_folder_contain_list(folder_name)
+        if ret is False:
+            return "", 500
+
         if folder_contain_list is None:
-            return "{} is missing.".format(folder_name), 404
+            return "{} is missing or not folder.".format(folder_name), 404
 
         return jsonify(folder_contain_list), 200
-
-    @app.route("/folder/info/<path:folder_name>", methods=["GET"]) 
-    def get_folder_info(folder_name):
-        folder_info = item_service.get_folder_info(folder_name)
-        if folder_info is None:
-            return "{} is missing.".format(folder_name), 404
-
-        return jsonify(folder_info), 200
-
-    @app.route("/folder/info/<path:folder_name>", methods=["PUT"])
-    def insert_folder_info(folder_name):
-        find_folder = item_service.get_folder_info(folder_name)
-        if find_folder is not None:
-            return "{} already exists.".format(folder_name), 200
-
-        folder_info = request.json
-        folder_info["name"] = folder_name
-
-        count = item_service.insert_folder_info(folder_info)
-        if count == 0:
-            return "", 400
-
-        return "", 201
