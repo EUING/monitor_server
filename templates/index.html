@@ -10,7 +10,7 @@
 			</tr>
 			{% for file_info in data_list %}
 			<tr>
-				<th> {{file_info.name}}</th>
+				<th> <a href="{{current_url}}/{{file_info.name}}">{{file_info.name}}</a></th>
 				<td> {{file_info.size}}B</td>
 				<td> {{file_info.creation_time}}</td>
 				<td> {{file_info.last_modified_time}}</td>

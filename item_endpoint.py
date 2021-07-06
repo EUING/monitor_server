@@ -4,15 +4,16 @@ def create_endpoint(app, item_service):
     @app.route("/")
     def root_index():
         root_contain_list = item_service.get_folder_contain_list()
-        return render_template("index.html", data_list = root_contain_list)
+        current_url = request.base_url[:-1]
+        return render_template("index.html", data_list = root_contain_list, current_url = current_url)
 
     @app.route("/<path:folder_name>")
     def folder_index(folder_name):
         folder_contain_list = item_service.get_folder_contain_list(folder_name)
         if folder_contain_list is None:
             return "{} is missing.".format(folder_name), 404
-
-        return render_template("index.html", data_list = folder_contain_list)
+        current_url = request.base_url
+        return render_template("index.html", data_list = folder_contain_list, current_url = current_url)
 
     @app.route("/item/name/<path:item_name>", methods=["PATCH"])
     def rename_item_info(item_name):
@@ -29,7 +30,7 @@ def create_endpoint(app, item_service):
     def delete_file_info(item_name):
         count = item_service.delete_item_info(item_name)
         if count == 0:
-            return "{} is missing.".format(item_name), 404
+            return "{} is missing.".format(item_name), 200
 
         return "", 204
 
@@ -41,11 +42,11 @@ def create_endpoint(app, item_service):
 
         return jsonify(file_info), 200
 
-    @app.route("/file/info/<path:file_name>", methods=["POST"])
+    @app.route("/file/info/<path:file_name>", methods=["PUT"])
     def insert_file_info(file_name):
         find_file = item_service.get_file_info(file_name)
         if find_file is not None:
-            return "{} already exists.".format(file_name), 409
+            return "{} already exists.".format(file_name), 200
 
         file_info = request.json
         file_info["name"] = file_name
@@ -89,11 +90,11 @@ def create_endpoint(app, item_service):
 
         return jsonify(folder_info), 200
 
-    @app.route("/folder/info/<path:folder_name>", methods=["POST"])
+    @app.route("/folder/info/<path:folder_name>", methods=["PUT"])
     def insert_folder_info(folder_name):
         find_folder = item_service.get_folder_info(folder_name)
         if find_folder is not None:
-            return "{} already exists.".format(folder_name), 409
+            return "{} already exists.".format(folder_name), 200
 
         folder_info = request.json
         folder_info["name"] = folder_name
