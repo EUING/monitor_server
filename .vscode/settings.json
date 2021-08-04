@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "/home/keh/miniconda3/envs/monitor/bin/python",
+    "python.autoComplete.addBrackets": true,
+    "python.languageServer": "Microsoft"
+}

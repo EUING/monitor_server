@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request, render_template
+import json
 
 def create_endpoint(app, item_service):
     @app.route("/")
@@ -32,6 +33,10 @@ def create_endpoint(app, item_service):
         if 0 == count:
             return "{} is missing.".format(item_name), 404
 
+        if hasattr(app, "broadcast"):
+            change_name_info["event"] = "rename"
+            app.broadcast(json.dumps(change_name_info))
+
         return "", 200
 
     @app.route("/item/info/<path:item_name>", methods=["DELETE"])
@@ -42,6 +47,9 @@ def create_endpoint(app, item_service):
 
         if 0 == count:
             return "{} is missing.".format(item_name), 200
+
+        if hasattr(app, "broadcast"):
+            app.broadcast(json.dumps({"event":"remove", "name": item_name}))
 
         return "", 204
 
@@ -70,13 +78,19 @@ def create_endpoint(app, item_service):
             if ret is False:
                 return "", 500
 
-            return "", 200
+            response_code = 200
         else:
             ret, count = item_service.insert_item_info(item_info)
             if ret is False:
                 return "", 500
 
-            return "", 201
+            response_code = 201
+
+        if hasattr(app, "broadcast"):
+            item_info["event"] = "download"
+            app.broadcast(json.dumps(item_info))
+        
+        return "", response_code
 
     @app.route("/item/contain", methods=["GET"])
     def get_root_contain_list():
