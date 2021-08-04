@@ -1,4 +1,5 @@
 from app import create_app
+from flask import request
 from flask_sock import Sock
 from simple_websocket import ConnectionClosed
 import json
@@ -6,22 +7,22 @@ import concurrent.futures
 
 app = create_app()
 sock = Sock(app)
-app.client_list = set()
+app.client_list = dict()
 
 def send(iter, data):
     return iter.send(data)    
 
-def broadcast(data):
+def broadcast(ip, data):
     delete_list = set()
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        future_broadcast = {executor.submit(send, iter, data): iter for iter in app.client_list}
+        future_broadcast = {executor.submit(send, v, data): k for k, v in app.client_list.items() if k != ip}
         for future in concurrent.futures.as_completed(future_broadcast):
-            iter = future_broadcast[future]
+            k = future_broadcast[future]
             if not future.result():
-                delete_list.add(iter)
+                delete_list.add(k)
 
-    for iter in delete_list:
-        app.client_list.discard(iter)
+    for ip in delete_list:
+        app.client_list.pop(ip, -1)
 
 app.broadcast = broadcast
 
@@ -52,9 +53,10 @@ def connect(ws):
     client = MyClient(ws)
     if not client.send(json.dumps({"event":"connected"})):
         print("connection failed")
-    
-    app.client_list.add(client)
-    print("Client connected")
+
+    ip = client.ws.environ.get("HTTP_X_REAL_IP", request.remote_addr)
+    app.client_list[ip] = client
+    print(ip + " connected")
     ret, message = client.receive()
-    print("Client disconnected")
-    app.client_list.discard(client)
+    print(ip + " disconnected")
+    app.client_list.pop(ip, -1)
