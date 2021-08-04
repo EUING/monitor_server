@@ -34,8 +34,9 @@ def create_endpoint(app, item_service):
             return "{} is missing.".format(item_name), 404
 
         if hasattr(app, "broadcast"):
+            ip = request.environ.get("HTTP_X_REAL_IP", request.remote_addr)
             change_name_info["event"] = "rename"
-            app.broadcast(json.dumps(change_name_info))
+            app.broadcast(ip, json.dumps(change_name_info))
 
         return "", 200
 
@@ -49,7 +50,8 @@ def create_endpoint(app, item_service):
             return "{} is missing.".format(item_name), 200
 
         if hasattr(app, "broadcast"):
-            app.broadcast(json.dumps({"event":"remove", "name": item_name}))
+            ip = request.environ.get("HTTP_X_REAL_IP", request.remote_addr)
+            app.broadcast(ip, json.dumps({"event":"remove", "name": item_name}))
 
         return "", 204
 
@@ -87,8 +89,9 @@ def create_endpoint(app, item_service):
             response_code = 201
 
         if hasattr(app, "broadcast"):
+            ip = request.environ.get("HTTP_X_REAL_IP", request.remote_addr)
             item_info["event"] = "download"
-            app.broadcast(json.dumps(item_info))
+            app.broadcast(ip, json.dumps(item_info))
         
         return "", response_code
 
