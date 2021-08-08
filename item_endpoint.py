@@ -76,6 +76,9 @@ def create_endpoint(app, item_service):
         item_info["name"] = item_name
 
         if find_item is not None:
+            if find_item["hash"] == item_info["hash"]:
+                return "", 200
+
             ret, count = item_service.modify_item_info(item_info)
             if ret is False:
                 return "", 500
