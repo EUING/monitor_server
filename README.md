@@ -14,8 +14,9 @@
 #### item_endpoint
 - 클라이언트에게 필요한 RESTful Endpoint 정의
 #### websocket
-- Broadcast 전송을 위한 클라이언트간 WebSocket 프로토콜 지원
+- 클라이언트를 ip로 구분하여 Broadcast 전송을 위한 WebSocket 프로토콜 지원
 #### gc
 - S3 Storage Object에 대한 garbage collection 기능 구현
 # 4. 프로젝트 구성도
-- sample
+![슬라이드1](https://user-images.githubusercontent.com/85142102/129480874-f8d3d79e-6dbf-419b-93e5-dbad4330c850.JPG)
+
